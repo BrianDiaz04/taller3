@@ -2,31 +2,25 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Prueba Cámara Trasera</title>
+    <title>WebAR con MindAR</title>
+    <!-- A-Frame + MindAR desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-aframe.prod.js"></script>
   </head>
   <body>
-    <h3>Acceso a la cámara (trasera)</h3>
-    <video id="video" autoplay playsinline style="width: 100%; max-width: 600px;"></video>
+    <a-scene
+      mindar-image="imageTargetSrc: ./mi-sticker.mind;" 
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: true"
+      embedded
+    >
+      <!-- Cámara -->
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <script>
-      const video = document.getElementById('video');
-
-      // Pedir acceso a la cámara trasera
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: "environment" } }
-      })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => {
-        console.error("Error al acceder a la cámara:", err);
-        // Si falla, intentar sin "exact"
-        return navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" }
-        }).then(stream => {
-          video.srcObject = stream;
-        });
-      });
-    </script>
+      <!-- Cuando se detecta el marcador (targetIndex: 0) aparece este póster -->
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-plane src="./poster.png" position="0 0 0" height="1" width="1"></a-plane>
+      </a-entity>
+    </a-scene>
   </body>
 </html>
