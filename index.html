@@ -2,23 +2,31 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Prueba Cámara</title>
+    <title>Prueba Cámara Trasera</title>
   </head>
   <body>
-    <h3>Acceso a la cámara</h3>
+    <h3>Acceso a la cámara (trasera)</h3>
     <video id="video" autoplay playsinline style="width: 100%; max-width: 600px;"></video>
 
     <script>
       const video = document.getElementById('video');
 
-      // Pedir acceso a la cámara
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
+      // Pedir acceso a la cámara trasera
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } }
+      })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.error("Error al acceder a la cámara:", err);
+        // Si falla, intentar sin "exact"
+        return navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }
+        }).then(stream => {
           video.srcObject = stream;
-        })
-        .catch(err => {
-          console.error("Error al acceder a la cámara:", err);
         });
+      });
     </script>
   </body>
 </html>
