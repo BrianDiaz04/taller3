@@ -2,51 +2,128 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR Cámara Vertical</title>
+    <title>WebAR con MindAR (Video)</title>
+    <!-- A-Frame + MindAR desde CDN -->
     <script src="https://cdn.jsdelivr.net/npm/aframe/dist/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-aframe.prod.js"></script>
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        touch-action: none; /* evita que el scroll afecte la cámara */
-      }
-      a-scene {
-        width: 100vw;
-        height: 100vh;
-      }
-    </style>
   </head>
   <body>
     <a-scene
-      mindar-image="imageTargetSrc: ./mi-sticker.mind;"
-      embedded
+      mindar-image="imageTargetSrc: ./mi-sticker.mind;" 
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: true"
-      arjs="trackingMethod: best; sourceType: webcam;"
+      embedded
     >
+      <!-- Assets: aquí cargamos el video -->
+      <a-assets>
+        <video 
+          id="miVideo" 
+          src="./video.mp4" 
+          autoplay 
+          loop 
+          muted 
+          playsinline
+        ></video>
+      </a-assets>
+
       <!-- Cámara -->
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Contenido sobre el marcador -->
+      <!-- Cuando se detecta el marcador (targetIndex: 0) aparece este video -->
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-plane src="#miVideo" position="0 0 0" height="1" width="1"></a-plane>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
+
+
+
+
+
+
+
+<!--
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>WebAR con MindAR</title>
+    <!-- A-Frame + MindAR desde CDN 
+    <script src="https://cdn.jsdelivr.net/npm/aframe/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-aframe.prod.js"></script>
+  </head>
+  <body>
+    <a-scene
+      mindar-image="imageTargetSrc: ./mi-sticker.mind;" 
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: true"
+      embedded
+    >
+      <!-- Cámara 
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <!-- Cuando se detecta el marcador (targetIndex: 0) aparece este póster 
       <a-entity mindar-image-target="targetIndex: 0">
         <a-plane src="./poster.png" position="0 0 0" height="1" width="1"></a-plane>
       </a-entity>
     </a-scene>
+  </body>
+</html>
+<!--<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Prueba Cámara</title>
+  </head>
+  <body>
+    <h3>Acceso a la cámara</h3>
+    <video id="video" autoplay playsinline style="width: 100%; max-width: 600px;"></video>
 
     <script>
-      // Forzar orientación vertical en la cámara
-      const scene = document.querySelector('a-scene');
-      scene.addEventListener('render-target-loaded', () => {
-        scene.renderer.setSize(window.innerWidth, window.innerHeight);
-      });
+      const video = document.getElementById('video');
 
-      window.addEventListener('resize', () => {
-        scene.renderer.setSize(window.innerWidth, window.innerHeight);
+      // Pedir acceso a la cámara
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          video.srcObject = stream;
+        })
+        .catch(err => {
+          console.error("Error al acceder a la cámara:", err);
+        });
+    </script>
+  </body>
+</html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Prueba Cámara Trasera</title>
+  </head>
+  <body>
+    <h3>Acceso a la cámara (trasera)</h3>
+    <video id="video" autoplay playsinline style="width: 100%; max-width: 600px;"></video>
+
+    <script>
+      const video = document.getElementById('video');
+
+      // Pedir acceso a la cámara trasera
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } }
+      })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.error("Error al acceder a la cámara:", err);
+        // Si falla, intentar sin "exact"
+        return navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }
+        }).then(stream => {
+          video.srcObject = stream;
+        });
       });
     </script>
   </body>
 </html>
+-->
