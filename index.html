@@ -1,14 +1,13 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Prueba Shader Chroma Key</title>
+<head>
+  <meta charset="utf-8">
+  <title>Prueba Shader Chroma Key</title>
 
-    <!-- 1️⃣ Primero cargamos A-Frame -->
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
+  <!-- ✅ Usá este CDN estable -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-    <!-- 2️⃣ Luego registramos el shader -->
-    <script>
+  <script>
+    window.addEventListener("load", () => {
       AFRAME.registerShader('chroma-key', {
         schema: {
           src: {type: 'map'},
@@ -32,29 +31,21 @@
 
           void main(void) {
             vec4 videoColor = texture2D(src, vUV);
-
             float Y  = 0.2989*videoColor.r + 0.5866*videoColor.g + 0.1145*videoColor.b;
             float Cr = videoColor.r - Y;
             float Cb = videoColor.b - Y;
-
             float targetY  = 0.2989*color.r + 0.5866*color.g + 0.1145*color.b;
             float targetCr = color.r - targetY;
             float targetCb = color.b - targetY;
-
             float diff = distance(vec2(Cr, Cb), vec2(targetCr, targetCb));
             float blend = smoothstep(similarity, similarity + smoothness, diff);
-
             gl_FragColor = vec4(videoColor.rgb, videoColor.a * blend);
           }
         `
       });
-    </script>
-
-    <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #0033cc; }
-      a-scene { width: 100%; height: 100%; }
-    </style>
-  </head>
+    });
+  </script>
+</head>
 
   <body>
     <a-scene embedded>
@@ -80,4 +71,5 @@
     </script>
   </body>
 </html>
+
 
