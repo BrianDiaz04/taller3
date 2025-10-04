@@ -2,104 +2,84 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR con Chroma Key</title>
-    <script src="https://cdn.jsdelivr.net/npm/aframe/dist/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-aframe.prod.js"></script>
+    <title>Prueba Shader Chroma Key</title>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
-      #ar-container {
-        width: 100%;
-        height: 100vh;
-        touch-action: none;
-      }
-      a-scene {
-        width: 100vw;
-        height: 100vh;
-      }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #0033cc; } /* fondo azul */
+      a-scene { width: 100%; height: 100%; }
     </style>
-  </head>
-  <body>
-    <div id="ar-container">
-      <a-scene
-        mindar-image="imageTargetSrc: ./mi-sticker.mind;"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: true"
-        embedded
-        renderer="colorManagement: true; physicallyCorrectLights: true;"
-      >
-        <!-- Assets: cargamos el video -->
-        <a-assets>
-          <video id="miVideo" src="./video.mp4" autoplay loop playsinline muted></video>
-        </a-assets>
-
-        <!-- Cámara -->
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-        <!-- Contenido sobre el marcador -->
-        <a-entity mindar-image-target="targetIndex: 0">
-          <!-- Usamos nuestro shader personalizado -->
-          <a-plane material="shader: chroma-key; src: #miVideo; color: 0 1 0; similarity: 0.3; smoothness: 0.1;" 
-                   position="0 0 0" height="2.5" width="1.5">
-          </a-plane>
-        </a-entity>
-      </a-scene>
-    </div>
 
     <script>
-    // Registrar shader de Chroma Key
-    AFRAME.registerShader('chroma-key', {
-      schema: {
-        src: {type: 'map'},
-        color: {type: 'vec3', default: {x: 0, y: 1, z: 0}}, // Verde por defecto
-        similarity: {type: 'number', default: 0.3}, // qué tan parecido al verde se filtra
-        smoothness: {type: 'number', default: 0.1}  // transición suave
-      },
-      vertexShader: `
-        varying vec2 vUV;
-        void main(void) {
-          vUV = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D src;
-        uniform vec3 color;
-        uniform float similarity;
-        uniform float smoothness;
-        varying vec2 vUV;
+      // Registrar shader de Chroma Key
+      AFRAME.registerShader('chroma-key', {
+        schema: {
+          src: {type: 'map'},
+          color: {type: 'color', default: 'green'}, // el color a eliminar
+          similarity: {type: 'number', default: 0.3},
+          smoothness: {type: 'number', default: 0.1}
+        },
+        vertexShader: `
+          varying vec2 vUV;
+          void main(void) {
+            vUV = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D src;
+          uniform vec3 color;
+          uniform float similarity;
+          uniform float smoothness;
+          varying vec2 vUV;
 
-        void main(void) {
-          vec4 videoColor = texture2D(src, vUV);
+          void main(void) {
+            vec4 videoColor = texture2D(src, vUV);
 
-          // Convertir a YCbCr para comparar mejor el color
-          float Y = 0.2989*videoColor.r + 0.5866*videoColor.g + 0.1145*videoColor.b;
-          float Cr = videoColor.r - Y;
-          float Cb = videoColor.b - Y;
+            // Convertir a YCbCr
+            float Y  = 0.2989*videoColor.r + 0.5866*videoColor.g + 0.1145*videoColor.b;
+            float Cr = videoColor.r - Y;
+            float Cb = videoColor.b - Y;
 
-          float targetY = 0.2989*color.r + 0.5866*color.g + 0.1145*color.b;
-          float targetCr = color.r - targetY;
-          float targetCb = color.b - targetY;
+            float targetY  = 0.2989*color.r + 0.5866*color.g + 0.1145*color.b;
+            float targetCr = color.r - targetY;
+            float targetCb = color.b - targetY;
 
-          float blend = smoothstep(similarity, similarity + smoothness,
-                                   distance(vec2(Cr, Cb), vec2(targetCr, targetCb)));
+            float diff = distance(vec2(Cr, Cb), vec2(targetCr, targetCb));
+            float blend = smoothstep(similarity, similarity + smoothness, diff);
 
-          gl_FragColor = vec4(videoColor.rgb, videoColor.a * blend);
-        }
-      `
-    });
+            gl_FragColor = vec4(videoColor.rgb, videoColor.a * blend);
+          }
+        `
+      });
+    </script>
+  </head>
 
-    // Forzar autoplay en móviles con toque
-    const video = document.querySelector('#miVideo');
-    document.body.addEventListener('click', () => {
-      if (video.paused) video.play();
-    });
+  <body>
+    <a-scene embedded>
+      <a-assets>
+        <!-- ⚠️ Asegurate de que este video exista en la misma carpeta -->
+        <video id="miVideo" src="./video.mp4" autoplay loop playsinline muted></video>
+      </a-assets>
+
+      <!-- Cámara -->
+      <a-entity camera position="0 0 3"></a-entity>
+
+      <!-- Plano con shader -->
+      <a-plane
+        position="0 0 0"
+        rotation="0 0 0"
+        width="3"
+        height="2"
+        material="shader: chroma-key; src: #miVideo; color: green; similarity: 0.3; smoothness: 0.1;"
+      ></a-plane>
+    </a-scene>
+
+    <script>
+      // Forzar autoplay en móviles
+      const video = document.querySelector('#miVideo');
+      document.body.addEventListener('click', () => {
+        if (video.paused) video.play();
+      });
     </script>
   </body>
 </html>
-
