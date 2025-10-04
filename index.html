@@ -3,18 +3,16 @@
   <head>
     <meta charset="utf-8">
     <title>Prueba Shader Chroma Key</title>
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
-    <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #0033cc; } /* fondo azul */
-      a-scene { width: 100%; height: 100%; }
-    </style>
 
+    <!-- 1️⃣ Primero cargamos A-Frame -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
+
+    <!-- 2️⃣ Luego registramos el shader -->
     <script>
-      // Registrar shader de Chroma Key
       AFRAME.registerShader('chroma-key', {
         schema: {
           src: {type: 'map'},
-          color: {type: 'color', default: 'green'}, // el color a eliminar
+          color: {type: 'color', default: 'green'},
           similarity: {type: 'number', default: 0.3},
           smoothness: {type: 'number', default: 0.1}
         },
@@ -35,7 +33,6 @@
           void main(void) {
             vec4 videoColor = texture2D(src, vUV);
 
-            // Convertir a YCbCr
             float Y  = 0.2989*videoColor.r + 0.5866*videoColor.g + 0.1145*videoColor.b;
             float Cr = videoColor.r - Y;
             float Cb = videoColor.b - Y;
@@ -52,22 +49,23 @@
         `
       });
     </script>
+
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #0033cc; }
+      a-scene { width: 100%; height: 100%; }
+    </style>
   </head>
 
   <body>
     <a-scene embedded>
       <a-assets>
-        <!-- ⚠️ Asegurate de que este video exista en la misma carpeta -->
         <video id="miVideo" src="./video.mp4" autoplay loop playsinline muted></video>
       </a-assets>
 
-      <!-- Cámara -->
       <a-entity camera position="0 0 3"></a-entity>
 
-      <!-- Plano con shader -->
       <a-plane
         position="0 0 0"
-        rotation="0 0 0"
         width="3"
         height="2"
         material="shader: chroma-key; src: #miVideo; color: green; similarity: 0.3; smoothness: 0.1;"
@@ -75,7 +73,6 @@
     </a-scene>
 
     <script>
-      // Forzar autoplay en móviles
       const video = document.querySelector('#miVideo');
       document.body.addEventListener('click', () => {
         if (video.paused) video.play();
@@ -83,3 +80,4 @@
     </script>
   </body>
 </html>
+
