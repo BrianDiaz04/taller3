@@ -1,75 +1,69 @@
 <!DOCTYPE html>
-<head>
-  <meta charset="utf-8">
-  <title>Prueba Shader Chroma Key</title>
-
-  <!-- ✅ Usá este CDN estable -->
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-
-  <script>
-    window.addEventListener("load", () => {
-      AFRAME.registerShader('chroma-key', {
-        schema: {
-          src: {type: 'map'},
-          color: {type: 'color', default: 'green'},
-          similarity: {type: 'number', default: 0.3},
-          smoothness: {type: 'number', default: 0.1}
-        },
-        vertexShader: `
-          varying vec2 vUV;
-          void main(void) {
-            vUV = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform sampler2D src;
-          uniform vec3 color;
-          uniform float similarity;
-          uniform float smoothness;
-          varying vec2 vUV;
-
-          void main(void) {
-            vec4 videoColor = texture2D(src, vUV);
-            float Y  = 0.2989*videoColor.r + 0.5866*videoColor.g + 0.1145*videoColor.b;
-            float Cr = videoColor.r - Y;
-            float Cb = videoColor.b - Y;
-            float targetY  = 0.2989*color.r + 0.5866*color.g + 0.1145*color.b;
-            float targetCr = color.r - targetY;
-            float targetCb = color.b - targetY;
-            float diff = distance(vec2(Cr, Cb), vec2(targetCr, targetCb));
-            float blend = smoothstep(similarity, similarity + smoothness, diff);
-            gl_FragColor = vec4(videoColor.rgb, videoColor.a * blend);
-          }
-        `
-      });
-    });
-  </script>
-</head>
-
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>AR Cámara Trasera con Video</title>
+    <script src="https://cdn.jsdelivr.net/npm/aframe/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #ar-container {
+        width: 100%;
+        height: 100vh;
+        touch-action: none;
+      }
+      a-scene {
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
   <body>
-    <a-scene embedded>
-      <a-assets>
-        <video id="miVideo" src="./video.mp4" autoplay loop playsinline muted></video>
-      </a-assets>
+    <div id="ar-container">
+      <a-scene
+        mindar-image="imageTargetSrc: ./mi-sticker.mind;"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: true"
+        embedded
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+      >
+        <!-- Assets: cargamos el video -->
+        <a-assets>
+          <video id="miVideo" src="./video.mp4" autoplay loop playsinline></video>
+        </a-assets>
 
-      <a-entity camera position="0 0 3"></a-entity>
+        <!-- Cámara -->
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-plane
-        position="0 0 0"
-        width="3"
-        height="2"
-        material="shader: chroma-key; src: #miVideo; color: green; similarity: 0.3; smoothness: 0.1;"
-      ></a-plane>
-    </a-scene>
+        <!-- Contenido sobre el marcador -->
+        <a-entity mindar-image-target="targetIndex: 0">
+          <a-plane src="#miVideo" position="0 0 0" height="2.5" width="1.5"></a-plane>
+        </a-entity>
+      </a-scene>
+    </div>
 
     <script>
+      const scene = document.querySelector('a-scene');
       const video = document.querySelector('#miVideo');
+
+      // Forzar fullscreen y ajustar renderer
+      scene.addEventListener('render-target-loaded', () => {
+        scene.renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+      window.addEventListener('resize', () => {
+        scene.renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // Forzar reproducción de video en móviles con un solo toque
       document.body.addEventListener('click', () => {
         if (video.paused) video.play();
       });
     </script>
   </body>
 </html>
-
-
