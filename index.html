@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR Cámara Trasera con Video</title>
+    <title>AR con Chroma Key</title>
     <script src="https://cdn.jsdelivr.net/npm/aframe/dist/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-aframe.prod.js"></script>
     <style>
@@ -35,7 +35,7 @@
       >
         <!-- Assets: cargamos el video -->
         <a-assets>
-          <video id="miVideo" src="./video.mp4"  type="video/webm" autoplay loop playsinline></video>
+          <video id="miVideo" src="./video.mp4" autoplay loop playsinline muted></video>
         </a-assets>
 
         <!-- Cámara -->
@@ -43,32 +43,62 @@
 
         <!-- Contenido sobre el marcador -->
         <a-entity mindar-image-target="targetIndex: 0">
-          <a-plane src="#miVideo" position="0 0 0" height="2.5" width="1.5"></a-plane>
+          <!-- Usamos nuestro shader personalizado -->
+          <a-plane material="shader: chroma-key; src: #miVideo; color: 0 1 0; similarity: 0.3; smoothness: 0.1;" 
+                   position="0 0 0" height="2.5" width="1.5">
+          </a-plane>
         </a-entity>
       </a-scene>
     </div>
 
     <script>
-      const scene = document.querySelector('a-scene');
-      const video = document.querySelector('#miVideo');
+    // Registrar shader de Chroma Key
+    AFRAME.registerShader('chroma-key', {
+      schema: {
+        src: {type: 'map'},
+        color: {type: 'vec3', default: {x: 0, y: 1, z: 0}}, // Verde por defecto
+        similarity: {type: 'number', default: 0.3}, // qué tan parecido al verde se filtra
+        smoothness: {type: 'number', default: 0.1}  // transición suave
+      },
+      vertexShader: `
+        varying vec2 vUV;
+        void main(void) {
+          vUV = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D src;
+        uniform vec3 color;
+        uniform float similarity;
+        uniform float smoothness;
+        varying vec2 vUV;
 
-      // Forzar fullscreen y ajustar renderer
-      scene.addEventListener('render-target-loaded', () => {
-        scene.renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-      window.addEventListener('resize', () => {
-        scene.renderer.setSize(window.innerWidth, window.innerHeight);
-      });
+        void main(void) {
+          vec4 videoColor = texture2D(src, vUV);
 
-      // Forzar reproducción de video en móviles con un solo toque
-      document.body.addEventListener('click', () => {
-        if (video.paused) video.play();
-      });
+          // Convertir a YCbCr para comparar mejor el color
+          float Y = 0.2989*videoColor.r + 0.5866*videoColor.g + 0.1145*videoColor.b;
+          float Cr = videoColor.r - Y;
+          float Cb = videoColor.b - Y;
+
+          float targetY = 0.2989*color.r + 0.5866*color.g + 0.1145*color.b;
+          float targetCr = color.r - targetY;
+          float targetCb = color.b - targetY;
+
+          float blend = smoothstep(similarity, similarity + smoothness,
+                                   distance(vec2(Cr, Cb), vec2(targetCr, targetCb)));
+
+          gl_FragColor = vec4(videoColor.rgb, videoColor.a * blend);
+        }
+      `
+    });
+
+    // Forzar autoplay en móviles con toque
+    const video = document.querySelector('#miVideo');
+    document.body.addEventListener('click', () => {
+      if (video.paused) video.play();
+    });
     </script>
   </body>
 </html>
-
-
-
-
-
