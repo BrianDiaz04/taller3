@@ -2,26 +2,13 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR Cámara Trasera con Video</title>
-    <script src="https://cdn.jsdelivr.net/npm/aframe/dist/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-aframe.prod.js"></script>
+    <title>AR Video con Chroma Key</title>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
-      #ar-container {
-        width: 100%;
-        height: 100vh;
-        touch-action: none;
-      }
-      a-scene {
-        width: 100vw;
-        height: 100vh;
-      }
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+      #ar-container { width: 100%; height: 100vh; touch-action: none; }
+      a-scene { width: 100vw; height: 100vh; }
     </style>
   </head>
   <body>
@@ -31,36 +18,54 @@
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: true"
         embedded
-        renderer="colorManagement: true; physicallyCorrectLights: true;"
+        renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true;"
       >
-        <!-- Assets: cargamos el video -->
         <a-assets>
-          <video id="miVideo" src="./video.mp4" autoplay loop playsinline></video>
+          <video id="miVideo" src="./video.mp4" autoplay loop playsinline crossorigin="anonymous"></video>
         </a-assets>
 
-        <!-- Cámara -->
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- Contenido sobre el marcador -->
+        <!-- Entidad con chroma key shader -->
         <a-entity mindar-image-target="targetIndex: 0">
-          <a-plane src="#miVideo" position="0 0 0" height="2.5" width="1.5"></a-plane>
+          <a-plane id="videoPlane" position="0 0 0" height="2.5" width="1.5"
+                   material="shader: chroma-key; src: #miVideo; colorToReplace: 0 1 0; threshold: 0.4;">
+          </a-plane>
         </a-entity>
       </a-scene>
     </div>
 
     <script>
-      const scene = document.querySelector('a-scene');
+      // === Shader personalizado para eliminar el verde ===
+      AFRAME.registerShader('chroma-key', {
+        schema: {
+          src: {type: 'map'},
+          colorToReplace: {type: 'vec3', default: {x: 0, y: 1, z: 0}}, // Verde puro
+          threshold: {type: 'number', default: 0.4}
+        },
+        vertexShader: `
+          varying vec2 vUV;
+          void main() {
+            vUV = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D src;
+          uniform vec3 colorToReplace;
+          uniform float threshold;
+          varying vec2 vUV;
+          void main() {
+            vec4 color = texture2D(src, vUV);
+            float diff = distance(color.rgb, colorToReplace);
+            if (diff < threshold) discard;
+            gl_FragColor = color;
+          }
+        `
+      });
+
+      // Forzar play del video en móviles
       const video = document.querySelector('#miVideo');
-
-      // Forzar fullscreen y ajustar renderer
-      scene.addEventListener('render-target-loaded', () => {
-        scene.renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-      window.addEventListener('resize', () => {
-        scene.renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      // Forzar reproducción de video en móviles con un solo toque
       document.body.addEventListener('click', () => {
         if (video.paused) video.play();
       });
