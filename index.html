@@ -2,13 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR Póster con Video Vertical Fijo</title>
-
-    <!-- Librerías -->
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-    <!-- Estilos -->
+    <title>AR Póster con Video Vertical</title>
+    <script src="https://cdn.jsdelivr.net/npm/aframe/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-aframe.prod.js"></script>
     <style>
       html, body {
         margin: 0;
@@ -16,7 +12,6 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: #000;
       }
       #ar-container {
         width: 100%;
@@ -46,11 +41,13 @@
         <!-- Cámara controlada por MindAR -->
         <a-camera mindar-camera></a-camera>
 
-        <!-- Video alineado al marcador -->
+        <!-- Plano pegado al marcador -->
         <a-entity mindar-image-target="targetIndex: 0" id="target">
+          <!-- Ajuste para video vertical (por ej. 9:16 ≈ 0.5625:1) -->
           <a-plane
             src="#miVideo"
-            position="0 0 0.01"
+            position="0 0 0"
+            rotation="0 0 0"
             rotation="-90 0 0"
             width="0.7"
             height="1.25"
@@ -60,17 +57,21 @@
     </div>
 
     <script>
-      const video = document.querySelector('#miVideo');
       const target = document.querySelector('#target');
+      const video = document.querySelector('#miVideo');
 
-      // Forzar reproducción en móviles
+      // Asegurar reproducción en móviles con toque
       document.body.addEventListener('click', () => {
         if (video.paused) video.play();
       });
 
-      // Play/Pause según tracking
-      target.addEventListener('targetFound', () => video.play());
-      target.addEventListener('targetLost', () => video.pause());
+      // Control de tracking: play/pause
+      target.addEventListener('targetFound', () => {
+        video.play();
+      });
+      target.addEventListener('targetLost', () => {
+        video.pause();
+      });
     </script>
   </body>
 </html>
