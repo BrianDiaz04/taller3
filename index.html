@@ -2,9 +2,13 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR Video Fijo sobre Póster</title>
+    <title>AR Póster con Video Vertical Fijo</title>
+
+    <!-- Librerías -->
     <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <!-- Estilos -->
     <style>
       html, body {
         margin: 0;
@@ -12,48 +16,61 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
+        background: #000;
+      }
+      #ar-container {
+        width: 100%;
+        height: 100vh;
+        touch-action: none;
+      }
+      a-scene {
+        width: 100vw;
+        height: 100vh;
       }
     </style>
   </head>
   <body>
-    <a-scene
-      mindar-image="imageTargetSrc: ./mi-sticker.mind;"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: true"
-      embedded
-      renderer="colorManagement: true; physicallyCorrectLights: true;"
-    >
-      <a-assets>
-        <video id="miVideo" src="./video.mp4" autoplay loop muted playsinline></video>
-      </a-assets>
+    <div id="ar-container">
+      <a-scene
+        mindar-image="imageTargetSrc: ./mi-sticker.mind;"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: true"
+        embedded
+        renderer="colorManagement: true; physicallyCorrectLights: true;"
+      >
+        <!-- Assets -->
+        <a-assets>
+          <video id="miVideo" src="./video.mp4" autoplay loop playsinline muted></video>
+        </a-assets>
 
-      <!-- Cámara de MindAR -->
-      <a-camera mindar-camera></a-camera>
+        <!-- Cámara controlada por MindAR -->
+        <a-camera mindar-camera></a-camera>
 
-      <!-- Video exactamente pegado al marcador -->
-      <a-entity mindar-image-target="targetIndex: 0" id="target">
-        <a-plane
-          src="#miVideo"
-          width="0.7"
-          height="1.25"
-          position="0 0 0.01"
-          rotation="-90 0 0"
-        ></a-plane>
-      </a-entity>
-    </a-scene>
+        <!-- Video alineado al marcador -->
+        <a-entity mindar-image-target="targetIndex: 0" id="target">
+          <a-plane
+            src="#miVideo"
+            position="0 0 0.01"
+            rotation="-90 0 0"
+            width="0.7"
+            height="1.25"
+          ></a-plane>
+        </a-entity>
+      </a-scene>
+    </div>
 
     <script>
       const video = document.querySelector('#miVideo');
       const target = document.querySelector('#target');
 
-      // Reproducir sólo cuando el marcador se ve
-      target.addEventListener('targetFound', () => video.play());
-      target.addEventListener('targetLost', () => video.pause());
-
-      // Forzar play en móviles
+      // Forzar reproducción en móviles
       document.body.addEventListener('click', () => {
         if (video.paused) video.play();
       });
+
+      // Play/Pause según tracking
+      target.addEventListener('targetFound', () => video.play());
+      target.addEventListener('targetLost', () => video.pause());
     </script>
   </body>
 </html>
