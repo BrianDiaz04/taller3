@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR Cámara Trasera con Video</title>
+    <title>AR Póster con Video Vertical</title>
     <script src="https://cdn.jsdelivr.net/npm/aframe/dist/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-aframe.prod.js"></script>
     <style>
@@ -33,39 +33,44 @@
         embedded
         renderer="colorManagement: true; physicallyCorrectLights: true;"
       >
-        <!-- Assets: cargamos el video -->
+        <!-- Assets -->
         <a-assets>
-          <video id="miVideo" src="./video.mp4" autoplay loop playsinline></video>
+          <video id="miVideo" src="./video.mp4" autoplay loop playsinline muted></video>
         </a-assets>
 
-        <!-- Cámara -->
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <!-- Cámara controlada por MindAR -->
+        <a-camera mindar-camera></a-camera>
 
-        <!-- Contenido sobre el marcador -->
-        <a-entity mindar-image-target="targetIndex: 0">
-          <a-plane src="#miVideo" position="0 0 0" height="1.8" width="1"></a-plane>
+        <!-- Plano pegado al marcador -->
+        <a-entity mindar-image-target="targetIndex: 0" id="target">
+          <!-- Ajuste para video vertical (por ej. 9:16 ≈ 0.5625:1) -->
+          <a-plane
+            src="#miVideo"
+            position="0 0 0"
+            rotation="0 0 0"
+            width="0.7"
+            height="1.25"
+          ></a-plane>
         </a-entity>
       </a-scene>
     </div>
 
     <script>
-      const scene = document.querySelector('a-scene');
+      const target = document.querySelector('#target');
       const video = document.querySelector('#miVideo');
 
-      // Forzar fullscreen y ajustar renderer
-      scene.addEventListener('render-target-loaded', () => {
-        scene.renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-      window.addEventListener('resize', () => {
-        scene.renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      // Forzar reproducción de video en móviles con un solo toque
+      // Asegurar reproducción en móviles con toque
       document.body.addEventListener('click', () => {
         if (video.paused) video.play();
+      });
+
+      // Control de tracking: play/pause
+      target.addEventListener('targetFound', () => {
+        video.play();
+      });
+      target.addEventListener('targetLost', () => {
+        video.pause();
       });
     </script>
   </body>
 </html>
-
-
